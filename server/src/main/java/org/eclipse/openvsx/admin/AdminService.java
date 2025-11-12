@@ -30,6 +30,7 @@ import org.springframework.boot.context.event.ApplicationStartedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.ZoneId;
 import java.util.Comparator;
@@ -227,6 +228,30 @@ public class AdminService {
 
     private String userNotFoundMessage(String user) {
         return "User not found: " + user;
+    }
+
+    @Transactional(rollbackOn = ErrorResultException.class)
+    public ResultJson deleteReview(String namespace, String extensionName, String reviewId) {
+        var extension = repositories.findExtension(extensionName, namespace);
+        if (extension == null || !extension.isActive()) {
+            var message = "Extension not found: " + NamingUtil.toExtensionId(namespace, extensionName);
+            throw new ErrorResultException(message, HttpStatus.NOT_FOUND);
+        }
+
+        var review = repositories.findReview(Long.parseLong(reviewId));
+        if (review.isEmpty()) {
+            var message = "Review with id " + reviewId + " not found";
+            throw new ErrorResultException(message, HttpStatus.NOT_FOUND);
+        }
+
+        entityManager.remove(review.get());
+
+        extension.setAverageRating(repositories.getAverageReviewRating(extension));
+        extension.setReviewCount(repositories.countActiveReviews(extension));
+        search.updateSearchEntry(extension);
+        cache.evictExtensionJsons(extension);
+        cache.evictLatestExtensionVersion(extension);
+        return ResultJson.success("Deleted review from " + review.get().getUser().getLoginName() + " for " + NamingUtil.toExtensionId(extension));
     }
 
     @Transactional(rollbackOn = ErrorResultException.class)
