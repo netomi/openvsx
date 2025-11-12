@@ -17,15 +17,30 @@ import { TextDivider } from '../../components/text-divider';
 import { DelayedLoadIndicator } from '../../components/delayed-load-indicator';
 import { ButtonWithProgress } from '../../components/button-with-progress';
 import { Timestamp } from '../../components/timestamp';
-import { ExportRatingStars } from './extension-rating-stars';
+import { ExtensionRatingStars } from './extension-rating-stars';
 import { ExtensionReviewDialog } from './extension-review-dialog';
 
 export const ExtensionDetailReviews: FunctionComponent<ExtensionDetailReviewsProps> = props => {
     const [reviewList, setReviewList] = useState<ExtensionReviewList>();
     const [loading, setLoading] = useState<boolean>(true);
     const [revoked, setRevoked] = useState<boolean>(false);
+    const [reviewSet, setReviewSet] = useState(new Set<number>());
     const context = useContext(MainContext);
     const abortController = useRef<AbortController>(new AbortController());
+
+    const addReview = (reviewId: number) => {
+        const newSet = new Set<number>(reviewSet);
+        newSet.add(reviewId);
+        setReviewSet(newSet);
+    };
+
+    const removeReview = (reviewId: number) => {
+        const newSet = new Set<number>(reviewSet);
+        if (newSet.has(reviewId)) {
+            newSet.delete(reviewId);
+            setReviewSet(newSet);
+        }
+    };
 
     useEffect(() => {
         updateReviews();
@@ -87,6 +102,30 @@ export const ExtensionDetailReviews: FunctionComponent<ExtensionDetailReviewsPro
         }
     };
 
+    const handleRemoveReviewButton = async (r: ExtensionReview) => {
+        addReview(r.id);
+        try {
+            const result = await context.service.deleteReview(abortController.current, r.deleteUrl);
+            if (isError(result)) {
+                throw result;
+            }
+            saveCompleted();
+        } catch (err) {
+            context.handleError(err);
+        } finally {
+            removeReview(r.id);
+        }
+    };
+
+    const renderRemoveButton = (r: ExtensionReview): ReactNode => {
+        return <ButtonWithProgress
+            working={reviewSet.has(r.id)}
+            onClick={() => handleRemoveReviewButton(r)}
+            title={`Remove review`} >
+            Remove review
+        </ButtonWithProgress>;
+    };
+
     const renderReviewList = (list?: ExtensionReviewList): ReactNode => {
         if (!list) {
             return '';
@@ -100,38 +139,50 @@ export const ExtensionDetailReviews: FunctionComponent<ExtensionDetailReviewsPro
     };
 
     const renderReview = (r: ExtensionReview): ReactNode => {
+        let adminActions;
+        if (context.user?.role === 'admin') {
+            adminActions = <Box mb={2} display='flex' alignItems='end'>
+                {renderRemoveButton(r)}
+            </Box>;
+        } else {
+            adminActions = "";
+        }
+
         return <Fragment key={r.user.loginName + r.timestamp}>
-            <Box my={2}>
-                <Box display='flex'>
-                    {
-                        r.timestamp ?
-                        <>
-                            <Typography variant='body2'><Timestamp value={r.timestamp}/></Typography>
-                            <TextDivider />
-                        </>
-                        : null
-                    }
-                    <Typography variant='body2'>
+            <Box display='flex' justifyContent='space-between'>
+                <Box my={2}>
+                    <Box display='flex'>
                         {
-                            r.user.homepage ?
-                            <Link
-                                href={r.user.homepage}
-                                color='text.primary'
-                                underline='hover'
-                            >
-                                {r.user.loginName}
-                            </Link>
-                            :
-                            r.user.loginName
+                            r.timestamp ?
+                            <>
+                                <Typography variant='body2'><Timestamp value={r.timestamp}/></Typography>
+                                <TextDivider />
+                            </>
+                            : null
                         }
-                    </Typography>
+                        <Typography variant='body2'>
+                            {
+                                r.user.homepage ?
+                                <Link
+                                    href={r.user.homepage}
+                                    color='text.primary'
+                                    underline='hover'
+                                >
+                                    {r.user.loginName}
+                                </Link>
+                                :
+                                r.user.loginName
+                            }
+                        </Typography>
+                    </Box>
+                    <Box display='flex' alignItems='center'>
+                        <ExtensionRatingStars number={r.rating} />
+                    </Box>
+                    <Box overflow='auto'>
+                        <Typography variant='body1' sx={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.comment}</Typography>
+                    </Box>
                 </Box>
-                <Box display='flex' alignItems='center'>
-                    <ExportRatingStars number={r.rating} />
-                </Box>
-                <Box overflow='auto'>
-                    <Typography variant='body1' sx={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.comment}</Typography>
-                </Box>
+                {adminActions}
             </Box>
             <Divider />
         </Fragment>;

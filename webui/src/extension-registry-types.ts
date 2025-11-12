@@ -143,8 +143,10 @@ export interface NewReview {
 }
 
 export interface ExtensionReview extends NewReview {
+    id: number;
     user: UserData;
     timestamp: TimestampString;
+    deleteUrl: UrlString;
 }
 
 export interface ExtensionReviewList {
