@@ -30,7 +30,6 @@ import org.springframework.boot.context.event.ApplicationStartedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.time.ZoneId;
 import java.util.Comparator;
@@ -244,14 +243,19 @@ public class AdminService {
             throw new ErrorResultException(message, HttpStatus.NOT_FOUND);
         }
 
-        entityManager.remove(review.get());
+        deleteReview(review.get());
+        return ResultJson.success("Deleted review from " + review.get().getUser().getLoginName() + " for " + NamingUtil.toExtensionId(extension));
+    }
 
+    private void deleteReview(ExtensionReview review) {
+        review.setActive(false);
+
+        var extension = review.getExtension();
         extension.setAverageRating(repositories.getAverageReviewRating(extension));
         extension.setReviewCount(repositories.countActiveReviews(extension));
         search.updateSearchEntry(extension);
         cache.evictExtensionJsons(extension);
         cache.evictLatestExtensionVersion(extension);
-        return ResultJson.success("Deleted review from " + review.get().getUser().getLoginName() + " for " + NamingUtil.toExtensionId(extension));
     }
 
     @Transactional(rollbackOn = ErrorResultException.class)
@@ -366,6 +370,11 @@ public class AdminService {
                 )
                 .toList());
 
+        var reviews = repositories.findActiveReviews(user);
+        userPublishInfo.setReviews(reviews.stream()
+                .map(ExtensionReview::toReviewJson)
+                .toList());
+
         return userPublishInfo;
     }
 
@@ -406,8 +415,16 @@ public class AdminService {
             extensions.updateExtension(extension);
         }
 
+        var deactivatedReviewCount = 0;
+        var reviews = repositories.findActiveReviews(user);
+        for (var review : reviews) {
+            deleteReview(review);
+            deactivatedReviewCount++;
+        }
+
         var result = ResultJson.success("Deactivated " + deactivatedTokenCount
-                + " tokens and deactivated " + deactivatedExtensionCount + " extensions of user "
+                + " tokens, deactivated " + deactivatedExtensionCount + " extensions and"
+                + " deactivated " + deactivatedReviewCount + " reviews of user "
                 + provider + "/" + loginName + "."); 
         logAdminAction(admin, result);
         return result;

@@ -25,6 +25,8 @@ public interface ExtensionReviewRepository extends Repository<ExtensionReview, L
 
     Streamable<ExtensionReview> findByExtension(Extension extension);
 
+    Streamable<ExtensionReview> findByUserAndActiveTrue(UserData user);
+
     Streamable<ExtensionReview> findByExtensionAndActiveTrue(Extension extension);
 
     Streamable<ExtensionReview> findByExtensionAndUserAndActiveTrue(Extension extension, UserData user);

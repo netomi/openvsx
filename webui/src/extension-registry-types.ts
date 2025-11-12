@@ -240,6 +240,7 @@ export interface NamespaceDetails {
 export interface PublisherInfo {
     user: UserData;
     extensions: Extension[];
+    reviews: ExtensionReview[];
     activeAccessTokenNum: number;
 }
 
