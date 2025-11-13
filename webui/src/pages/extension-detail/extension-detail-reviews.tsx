@@ -24,22 +24,20 @@ export const ExtensionDetailReviews: FunctionComponent<ExtensionDetailReviewsPro
     const [reviewList, setReviewList] = useState<ExtensionReviewList>();
     const [loading, setLoading] = useState<boolean>(true);
     const [revoked, setRevoked] = useState<boolean>(false);
-    const [reviewSet, setReviewSet] = useState(new Set<number>());
+    const [removeReviewSet, setRemoveReviewSet] = useState(new Set<number>());
     const context = useContext(MainContext);
     const abortController = useRef<AbortController>(new AbortController());
 
-    const addReview = (reviewId: number) => {
-        const newSet = new Set<number>(reviewSet);
+    const addRemoveReviewRequest = (reviewId: number) => {
+        const newSet = new Set<number>(removeReviewSet);
         newSet.add(reviewId);
-        setReviewSet(newSet);
+        setRemoveReviewSet(newSet);
     };
 
-    const removeReview = (reviewId: number) => {
-        const newSet = new Set<number>(reviewSet);
-        if (newSet.has(reviewId)) {
-            newSet.delete(reviewId);
-            setReviewSet(newSet);
-        }
+    const deleteRemoveReviewRequest = (reviewId: number) => {
+        const newSet = new Set<number>(removeReviewSet);
+        newSet.delete(reviewId);
+        setRemoveReviewSet(newSet);
     };
 
     useEffect(() => {
@@ -102,8 +100,8 @@ export const ExtensionDetailReviews: FunctionComponent<ExtensionDetailReviewsPro
         }
     };
 
-    const handleRemoveReviewButton = async (r: ExtensionReview) => {
-        addReview(r.id);
+    const handleAdminRemoveReviewButton = async (r: ExtensionReview) => {
+        addRemoveReviewRequest(r.id);
         try {
             const result = await context.service.deleteReview(abortController.current, r.deleteUrl);
             if (isError(result)) {
@@ -113,14 +111,14 @@ export const ExtensionDetailReviews: FunctionComponent<ExtensionDetailReviewsPro
         } catch (err) {
             context.handleError(err);
         } finally {
-            removeReview(r.id);
+            deleteRemoveReviewRequest(r.id);
         }
     };
 
-    const renderRemoveButton = (r: ExtensionReview): ReactNode => {
+    const renderAdminRemoveButton = (r: ExtensionReview): ReactNode => {
         return <ButtonWithProgress
-            working={reviewSet.has(r.id)}
-            onClick={() => handleRemoveReviewButton(r)}
+            working={removeReviewSet.has(r.id)}
+            onClick={() => handleAdminRemoveReviewButton(r)}
             title={`Remove review`} >
             Remove review
         </ButtonWithProgress>;
@@ -139,15 +137,6 @@ export const ExtensionDetailReviews: FunctionComponent<ExtensionDetailReviewsPro
     };
 
     const renderReview = (r: ExtensionReview): ReactNode => {
-        let adminActions;
-        if (context.user?.role === 'admin') {
-            adminActions = <Box mb={2} display='flex' alignItems='end'>
-                {renderRemoveButton(r)}
-            </Box>;
-        } else {
-            adminActions = "";
-        }
-
         return <Fragment key={r.user.loginName + r.timestamp}>
             <Box display='flex' justifyContent='space-between'>
                 <Box my={2}>
@@ -182,7 +171,14 @@ export const ExtensionDetailReviews: FunctionComponent<ExtensionDetailReviewsPro
                         <Typography variant='body1' sx={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.comment}</Typography>
                     </Box>
                 </Box>
-                {adminActions}
+                {
+                    context.user?.role === 'admin' ?
+                        <Box mb={2} display='flex' alignItems='end'>
+                            {renderAdminRemoveButton(r)}
+                        </Box>
+                        :
+                        null
+                }
             </Box>
             <Divider />
         </Fragment>;
