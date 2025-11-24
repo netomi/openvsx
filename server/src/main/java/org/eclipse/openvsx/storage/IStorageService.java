@@ -9,11 +9,14 @@
  ********************************************************************************/
 package org.eclipse.openvsx.storage;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.util.TempFile;
+import org.eclipse.openvsx.util.UrlUtil;
 import org.springframework.data.util.Pair;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Path;
@@ -62,5 +65,24 @@ public interface IStorageService {
 
     void copyNamespaceLogo(Namespace oldNamespace, Namespace newNamespace);
 
+    @Nullable
     Path getCachedFile(FileResource resource);
+
+    default String getObjectKey(FileResource resource) {
+        var extVersion = resource.getExtension();
+        var extension = extVersion.getExtension();
+        var namespace = extension.getNamespace();
+        var segments = new String[]{namespace.getName(), extension.getName()};
+        if(!extVersion.isUniversalTargetPlatform()) {
+            segments = ArrayUtils.add(segments, extVersion.getTargetPlatform());
+        }
+
+        segments = ArrayUtils.add(segments, extVersion.getVersion());
+        segments = ArrayUtils.addAll(segments, resource.getName().split("/"));
+        return UrlUtil.createApiUrl("", segments).substring(1); // remove first '/'
+    }
+
+    default String getObjectKey(Namespace namespace) {
+        return UrlUtil.createApiUrl("", namespace.getName(), "logo", namespace.getLogoName()).substring(1); // remove first '/'
+    }
 }

@@ -305,22 +305,4 @@ public class AwsStorageService implements IStorageService {
 
         return path;
     }
-
-    protected String getObjectKey(FileResource resource) {
-        var extVersion = resource.getExtension();
-        var extension = extVersion.getExtension();
-        var namespace = extension.getNamespace();
-        var segments = new String[] {namespace.getName(), extension.getName()};
-        if (!extVersion.isUniversalTargetPlatform()) {
-            segments = ArrayUtils.add(segments, extVersion.getTargetPlatform());
-        }
-
-        segments = ArrayUtils.add(segments, extVersion.getVersion());
-        segments = ArrayUtils.addAll(segments, resource.getName().split("/"));
-        return UrlUtil.createApiUrl("", segments).substring(1); // remove first '/'
-    }
-
-    protected String getObjectKey(Namespace namespace) {
-        return UrlUtil.createApiUrl("", namespace.getName(), "logo", namespace.getLogoName()).substring(1);
-    }
 }

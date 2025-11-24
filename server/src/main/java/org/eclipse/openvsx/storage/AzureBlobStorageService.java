@@ -92,14 +92,14 @@ public class AzureBlobStorageService implements IStorageService {
 	@Override
     public void uploadFile(TempFile tempFile) {
         var resource = tempFile.getResource();
-        var blobName = getBlobName(resource);
+        var blobName = getObjectKey(resource);
         uploadFile(tempFile, resource.getName(), blobName);
     }
 
     @Override
     public void uploadNamespaceLogo(TempFile logoFile) {
         var namespace = logoFile.getNamespace();
-        var blobName = getBlobName(namespace);
+        var blobName = getObjectKey(namespace);
         uploadFile(logoFile, namespace.getLogoName(), blobName);
     }
 
@@ -124,12 +124,12 @@ public class AzureBlobStorageService implements IStorageService {
 
 	@Override
 	public void removeFile(FileResource resource) {
-		removeFile(getBlobName(resource));
+		removeFile(getObjectKey(resource));
 	}
 
     @Override
     public void removeNamespaceLogo(Namespace namespace) {
-        removeFile(getBlobName(namespace));
+        removeFile(getObjectKey(namespace));
     }
 
     private void removeFile(String blobName) {
@@ -150,7 +150,7 @@ public class AzureBlobStorageService implements IStorageService {
 
     @Override
 	public URI getLocation(FileResource resource) {
-        var blobName = getBlobName(resource);
+        var blobName = getObjectKey(resource);
         if (StringUtils.isEmpty(serviceEndpoint)) {
             throw new IllegalStateException(missingEndpointMessage(blobName));
         }
@@ -160,23 +160,9 @@ public class AzureBlobStorageService implements IStorageService {
         return URI.create(serviceEndpoint + blobContainer + "/" + blobName);
 	}
 
-    protected String getBlobName(FileResource resource) {
-        var extVersion = resource.getExtension();
-        var extension = extVersion.getExtension();
-        var namespace = extension.getNamespace();
-        var segments = new String[]{namespace.getName(), extension.getName()};
-		if(!extVersion.isUniversalTargetPlatform()) {
-		    segments = ArrayUtils.add(segments, extVersion.getTargetPlatform());
-        }
-
-	    segments = ArrayUtils.add(segments, extVersion.getVersion());
-        segments = ArrayUtils.addAll(segments, resource.getName().split("/"));
-        return UrlUtil.createApiUrl("", segments).substring(1); // remove first '/'
-    }
-
     @Override
     public URI getNamespaceLogoLocation(Namespace namespace) {
-        var blobName = getBlobName(namespace);
+        var blobName = getObjectKey(namespace);
         if (StringUtils.isEmpty(serviceEndpoint)) {
             throw new IllegalStateException(missingEndpointMessage(blobName));
         }
@@ -188,7 +174,7 @@ public class AzureBlobStorageService implements IStorageService {
 
     @Override
     public TempFile downloadFile(FileResource resource) throws IOException {
-        var blobName = getBlobName(resource);
+        var blobName = getObjectKey(resource);
         if (StringUtils.isEmpty(serviceEndpoint)) {
             throw new IllegalStateException(missingEndpointMessage(blobName));
         }
@@ -199,16 +185,12 @@ public class AzureBlobStorageService implements IStorageService {
         return tempFile;
     }
 
-    protected String getBlobName(Namespace namespace) {
-        return UrlUtil.createApiUrl("", namespace.getName(), "logo", namespace.getLogoName()).substring(1); // remove first '/'
-    }
-
     @Override
     public void copyFiles(List<Pair<FileResource,FileResource>> pairs) {
         var copyOperations = new ArrayList<SyncPoller<BlobCopyInfo, Void>>();
         for(var pair : pairs) {
             var oldLocation = getLocation(pair.getFirst()).toString();
-            var newBlobName = getBlobName(pair.getSecond());
+            var newBlobName = getObjectKey(pair.getSecond());
             var poller = getContainerClient().getBlobClient(newBlobName)
                     .beginCopy(oldLocation, Duration.of(1, ChronoUnit.SECONDS));
 
@@ -225,7 +207,7 @@ public class AzureBlobStorageService implements IStorageService {
     @Override
     public void copyNamespaceLogo(Namespace oldNamespace, Namespace newNamespace) {
         var oldLocation = getNamespaceLogoLocation(oldNamespace).toString();
-        var newBlobName = getBlobName(newNamespace);
+        var newBlobName = getObjectKey(newNamespace);
         var poller = getContainerClient().getBlobClient(newBlobName)
                 .beginCopy(oldLocation, Duration.of(1, ChronoUnit.SECONDS));
 
@@ -238,7 +220,7 @@ public class AzureBlobStorageService implements IStorageService {
     @Override
     @Cacheable(value = CACHE_EXTENSION_FILES, keyGenerator = GENERATOR_FILES, cacheManager = "fileCacheManager")
     public Path getCachedFile(FileResource resource) {
-        var blobName = getBlobName(resource);
+        var blobName = getObjectKey(resource);
         if (StringUtils.isEmpty(serviceEndpoint)) {
             throw new IllegalStateException(missingEndpointMessage(blobName));
         }
