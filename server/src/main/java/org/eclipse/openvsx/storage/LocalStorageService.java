@@ -74,13 +74,8 @@ public class LocalStorageService implements IStorageService {
     }
 
     @Override
-    public String getObjectKey(FileResource resource) {
-        return UrlUtil.createApiFileUrl("", resource.getExtension(), resource.getName());
-    }
-
-    @Override
     public URI getLocation(FileResource resource) {
-        return URI.create(UrlUtil.getBaseUrl() + getObjectKey(resource));
+        return URI.create(UrlUtil.createApiFileUrl(UrlUtil.getBaseUrl(), resource.getExtension(), resource.getName()));
     }
 
     public ResponseEntity<StreamingResponseBody> getNamespaceLogo(Namespace namespace) {
@@ -99,7 +94,7 @@ public class LocalStorageService implements IStorageService {
     }
 
     public URI getNamespaceLogoLocation(Namespace namespace) {
-        return URI.create(UrlUtil.createApiUrl(UrlUtil.getBaseUrl(), "api") + getObjectKey(namespace));
+        return URI.create(UrlUtil.createApiUrl(UrlUtil.getBaseUrl(), "api", namespace.getName(), "logo", namespace.getLogoName()));
     }
 
     private HttpHeaders getFileResponseHeaders(String fileName) {
