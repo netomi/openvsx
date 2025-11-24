@@ -54,6 +54,7 @@ public class PublishExtensionVersionService {
     @Transactional
     public void mirrorResource(TempFile tempFile) {
         mirrorResource(tempFile.getResource());
+        storageUtil.uploadFile(tempFile);
     }
 
     @Transactional

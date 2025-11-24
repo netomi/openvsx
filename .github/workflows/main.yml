@@ -9,8 +9,8 @@ on:
       - master
 
 env:
-  SERVER_TAG: ghcr.io/eclipse/openvsx-server
-  WEBUI_TAG: ghcr.io/eclipse/openvsx-webui
+  SERVER_TAG: ghcr.io/netomi/openvsx-server
+  WEBUI_TAG: ghcr.io/netomi/openvsx-webui
 
 jobs:
   build:

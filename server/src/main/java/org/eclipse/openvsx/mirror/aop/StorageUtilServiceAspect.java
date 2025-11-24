@@ -25,7 +25,7 @@ public class StorageUtilServiceAspect {
     private List<String> readOnlyMethods;
 
     public StorageUtilServiceAspect() {
-        readOnlyMethods = List.of("uploadFile", "removeFile", "increaseDownloadCount");
+        readOnlyMethods = List.of("removeFile", "increaseDownloadCount");
     }
 
     @Around("execution(* org.eclipse.openvsx.storage.StorageUtilService.*(..))")
