@@ -201,7 +201,6 @@ public class StorageUtilService implements IStorageService {
     }
 
     @Override
-    @Transactional(Transactional.TxType.MANDATORY)
     public void uploadFile(TempFile tempFile) {
         var resource = tempFile.getResource();
         var storageType = getStorageTypeForResource(resource);
