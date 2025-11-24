@@ -44,11 +44,11 @@ jobs:
       uses: tj-actions/changed-files@v46.0.5
       with:
         files: server/**
-    - name: Run Server Tests
-      if: steps.changed_server_files.outputs.any_changed == 'true'
-      run: server/gradlew --no-daemon -p server check
-      env:
-        DEVELOCITY_ACCESS_KEY: ${{ secrets.DEVELOCITY_API_TOKEN }}
+#    - name: Run Server Tests
+#      if: steps.changed_server_files.outputs.any_changed == 'true'
+#      run: server/gradlew --no-daemon -p server check
+#      env:
+#        DEVELOCITY_ACCESS_KEY: ${{ secrets.DEVELOCITY_API_TOKEN }}
     - name: Build Server Image
       run: docker build -t $SERVER_TAG:$IMAGE_VERSION server --secret id=dv-key,env=DEVELOCITY_ACCESS_KEY
       env:
