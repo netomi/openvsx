@@ -35,29 +35,45 @@ public class CdnStorageServiceAspect {
     @Value("${ovsx.storage.cdn.prefix-url:}")
     String cdnPrefixUrl;
 
+    @Value("${ovsx.storage.cdn.storage-filter:}")
+    String storageServiceFilter;
+
     @Around("execution(* org.eclipse.openvsx.storage.*StorageService.getLocation(..))")
     public Object getLocation(ProceedingJoinPoint joinPoint) throws Throwable {
         var storageService = (IStorageService) joinPoint.getTarget();
-        // Do not rewrite files located in the local storage.
-        // The StorageUtilService class handles local storage separately, this is an additional safeguard.
-        if (storageService instanceof LocalStorageService) {
-            return joinPoint.proceed();
-        } else {
+
+        if (shallUseCdn(storageService)) {
             var fileResource = (FileResource) joinPoint.getArgs()[0];
             return UrlUtil.createURI(cdnPrefixUrl, storageService.getObjectKey(fileResource));
+        } else {
+            return joinPoint.proceed();
         }
     }
 
     @Around("execution(* org.eclipse.openvsx.storage.*StorageService.getNamespaceLogoLocation(..))")
     public Object getNamespaceLogoLocation(ProceedingJoinPoint joinPoint) throws Throwable {
         var storageService = (IStorageService) joinPoint.getTarget();
-        // Do not rewrite logos located in the local storage.
-        // The StorageUtilService class handles local storage separately, this is an additional safeguard.
-        if (storageService instanceof LocalStorageService) {
-            return joinPoint.proceed();
-        } else {
+
+        if (shallUseCdn(storageService)) {
             var namespace = (Namespace) joinPoint.getArgs()[0];
             return UrlUtil.createURI(cdnPrefixUrl, storageService.getObjectKey(namespace));
+        } else {
+            return joinPoint.proceed();
+        }
+    }
+
+    private boolean shallUseCdn(IStorageService storageService) {
+        // Do not rewrite files located in the local storage.
+        // The StorageUtilService class handles local storage separately, this is an additional safeguard.
+
+        // If a filter is defined, only use a CDN for storage services that match the filter.
+        
+        if (storageService instanceof LocalStorageService) {
+            return false;
+        } else if (storageServiceFilter != null) {
+            return storageService.getClass().getName().matches(storageServiceFilter);
+        } else {
+            return true;
         }
     }
 }
