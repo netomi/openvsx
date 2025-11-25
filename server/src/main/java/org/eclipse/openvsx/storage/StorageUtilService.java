@@ -70,6 +70,10 @@ public class StorageUtilService implements IStorageService {
     @Value("${ovsx.storage.external-resource-types:*}")
     String[] externalResourceTypes;
 
+    /** Whether updating download counts shall be enabled. */
+    @Value("${ovsx.storage.download-counts:true}")
+    boolean updateDownloadCounts;
+
     public StorageUtilService(
             RepositoryService repositories,
             GoogleCloudStorageService googleStorage,
@@ -265,6 +269,10 @@ public class StorageUtilService implements IStorageService {
 
     @Transactional
     public void increaseDownloadCount(FileResource resource) {
+        if (!updateDownloadCounts) {
+            return;
+        }
+        
         if(azureDownloadCountService.isEnabled()) {
             // don't count downloads twice
             return;
