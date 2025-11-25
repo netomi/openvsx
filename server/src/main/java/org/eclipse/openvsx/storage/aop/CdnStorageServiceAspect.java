@@ -21,8 +21,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.stereotype.Component;
 
-import java.net.URI;
-
 /**
  * An aspect to rewrite the actual file location returned by a specific {@link IStorageService} instance.
  *
@@ -41,13 +39,12 @@ public class CdnStorageServiceAspect {
     public Object getLocation(ProceedingJoinPoint joinPoint) throws Throwable {
         var storageService = (IStorageService) joinPoint.getTarget();
         // Do not rewrite files located in the local storage.
-        // The StorageUtilService class handles local storage separately, this is an additional safe-guard.
+        // The StorageUtilService class handles local storage separately, this is an additional safeguard.
         if (storageService instanceof LocalStorageService) {
             return joinPoint.proceed();
         } else {
             var fileResource = (FileResource) joinPoint.getArgs()[0];
-            var url = UrlUtil.createApiUrl(cdnPrefixUrl, storageService.getObjectKey(fileResource));
-            return url != null ? URI.create(url) : null;
+            return UrlUtil.createURI(cdnPrefixUrl, storageService.getObjectKey(fileResource));
         }
     }
 
@@ -55,13 +52,12 @@ public class CdnStorageServiceAspect {
     public Object getNamespaceLogoLocation(ProceedingJoinPoint joinPoint) throws Throwable {
         var storageService = (IStorageService) joinPoint.getTarget();
         // Do not rewrite logos located in the local storage.
-        // The StorageUtilService class handles local storage separately, this is an additional safe-guard.
+        // The StorageUtilService class handles local storage separately, this is an additional safeguard.
         if (storageService instanceof LocalStorageService) {
             return joinPoint.proceed();
         } else {
             var namespace = (Namespace) joinPoint.getArgs()[0];
-            var url = UrlUtil.createApiUrl(cdnPrefixUrl, storageService.getObjectKey(namespace));
-            return url != null ? URI.create(url) : null;
+            return UrlUtil.createURI(cdnPrefixUrl, storageService.getObjectKey(namespace));
         }
     }
 }
