@@ -62,6 +62,9 @@ public class UserService {
     @Value("${ovsx.token-prefix:}")
     String tokenPrefix;
 
+    @Value("${ovsx.allow-namespace-logo-updates:true}")
+    boolean allowNamespaceLogoUpdates;
+
     public UserService(
             EntityManager entityManager,
             RepositoryService repositories,
@@ -180,6 +183,10 @@ public class UserService {
             throw new ErrorResultException("You must be an owner of this namespace.");
         }
 
+        if (StringUtils.isEmpty(details.getLogo()) && StringUtils.isNotEmpty(namespace.getLogoName()) && !allowNamespaceLogoUpdates) {
+            throw new ErrorResultException("Namespace logo updates are currently not allowed.");
+        }
+
         var issues = validator.validateNamespaceDetails(details);
         if (!issues.isEmpty()) {
             var message = issues.size() == 1
@@ -226,6 +233,11 @@ public class UserService {
         }
 
         var oldNamespace = SerializationUtils.clone(namespace);
+
+        if (StringUtils.isNotEmpty(oldNamespace.getLogoName()) && !allowNamespaceLogoUpdates) {
+            throw new ErrorResultException("Namespace logo updates are currently not allowed.");
+        }
+
         try (
                 var logoFile = new TempFile("namespace-logo", ".png");
                 var out = Files.newOutputStream(logoFile.getPath())
