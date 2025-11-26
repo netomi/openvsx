@@ -4,10 +4,10 @@ on:
   push:
     branches:
       - master
-      - 0.29.1
   pull_request:
     branches:
       - master
+      - 0.29.1
 
 env:
   SERVER_TAG: ghcr.io/netomi/openvsx-server
