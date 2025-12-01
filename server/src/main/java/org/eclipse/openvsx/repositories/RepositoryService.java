@@ -47,7 +47,7 @@ public class RepositoryService {
     private final PersonalAccessTokenRepository tokenRepo;
     private final PersonalAccessTokenJooqRepository tokenJooqRepo;
     private final PersistedLogRepository persistedLogRepo;
-    private final AzureDownloadCountProcessedItemRepository downloadCountRepo;
+    private final DownloadCountProcessedItemRepository downloadCountRepo;
     private final ExtensionJooqRepository extensionJooqRepo;
     private final ExtensionVersionJooqRepository extensionVersionJooqRepo;
     private final FileResourceJooqRepository fileResourceJooqRepo;
@@ -72,7 +72,7 @@ public class RepositoryService {
             PersonalAccessTokenRepository tokenRepo,
             PersonalAccessTokenJooqRepository tokenJooqRepo,
             PersistedLogRepository persistedLogRepo,
-            AzureDownloadCountProcessedItemRepository downloadCountRepo,
+            DownloadCountProcessedItemRepository downloadCountRepo,
             ExtensionJooqRepository extensionJooqRepo,
             ExtensionVersionJooqRepository extensionVersionJooqRepo,
             FileResourceJooqRepository fileResourceJooqRepo,
@@ -354,8 +354,8 @@ public class RepositoryService {
         return persistedLogRepo.findByTimestampAfterOrderByTimestampAsc(dateTime);
     }
 
-    public List<String> findAllSucceededAzureDownloadCountProcessedItemsByNameIn(List<String> names) {
-        return downloadCountRepo.findAllSucceededAzureDownloadCountProcessedItemsByNameIn(names);
+    public List<String> findAllSucceededDownloadCountProcessedItemsByStorageTypeAndNameIn(String storageType, List<String> names) {
+        return downloadCountRepo.findAllSucceededDownloadCountProcessedItemsByStorageTypeAndNameIn(storageType, names);
     }
 
     public List<Extension> findActiveExtensionsByPublicId(Collection<String> publicIds, String... namespacesToExclude) {
