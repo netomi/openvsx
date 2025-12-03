@@ -143,7 +143,7 @@ public class AwsDownloadCountService {
                 if (!counts.isEmpty()) {
                     var extensionDownloads = processor.processDownloadCounts(FileResource.STORAGE_AWS, counts);
                     var updatedExtensions = processor.increaseDownloadCounts(extensionDownloads);
-                    processor.evictCaches(updatedExtensions);
+                    processor.evictCaches(updatedExtensions, false);
                     processor.updateSearchEntries(updatedExtensions);
                 }
 

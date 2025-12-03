@@ -97,10 +97,12 @@ public class DownloadCountProcessor {
     }
 
     @Transactional //needs transaction for lazy-loading versions
-    public void evictCaches(List<Extension> extensions) {
+    public void evictCaches(List<Extension> extensions, boolean includeExtensionJsons) {
         Observation.createNotStarted("DownloadCountProcessor#evictCaches", observations).observe(() -> extensions.forEach(extension -> {
             extension = entityManager.merge(extension);
-            // cache.evictExtensionJsons(extension);
+            if (includeExtensionJsons) {
+                cache.evictExtensionJsons(extension);
+            }
             cache.evictLatestExtensionVersion(extension);
         }));
     }
