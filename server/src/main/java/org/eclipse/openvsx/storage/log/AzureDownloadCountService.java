@@ -122,6 +122,8 @@ public class AzureDownloadCountService {
             iterableByPage = !StringUtils.isEmpty(continuationToken) ? blobs.iterableByPage(continuationToken) : null;
         }
 
+        processor.evictExtensionCache();
+
         logger.info("[AzureDownloadCountService] << updateDownloadCounts");
     }
 

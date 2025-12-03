@@ -98,6 +98,8 @@ public class AwsDownloadCountService {
             continuationToken = objects.isTruncated() ? objects.nextContinuationToken() : null;
         } while (continuationToken != null);
 
+        processor.evictExtensionCache();
+
         logger.info("[AwsDownloadCountService] << updateDownloadCounts");
     }
 

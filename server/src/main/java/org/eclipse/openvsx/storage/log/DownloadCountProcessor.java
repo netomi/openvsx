@@ -90,11 +90,17 @@ public class DownloadCountProcessor {
         });
     }
 
+    public void evictExtensionCache() {
+        Observation.createNotStarted("DownloadCountProcessor#evictExtensionCache", observations).observe(() ->
+            cache.evictExtensionJsons()
+        );
+    }
+
     @Transactional //needs transaction for lazy-loading versions
     public void evictCaches(List<Extension> extensions) {
         Observation.createNotStarted("DownloadCountProcessor#evictCaches", observations).observe(() -> extensions.forEach(extension -> {
             extension = entityManager.merge(extension);
-            cache.evictExtensionJsons(extension);
+            // cache.evictExtensionJsons(extension);
             cache.evictLatestExtensionVersion(extension);
         }));
     }
