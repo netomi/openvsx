@@ -120,4 +120,10 @@ public class DownloadCountProcessor {
                 repositories.findAllSucceededDownloadCountProcessedItemsByStorageTypeAndNameIn(storageType, blobNames)
         );
     }
+
+    public List<String> failedItems(String storageType, List<String> blobNames) {
+        return Observation.createNotStarted("DownloadCountProcessor#failedItems", observations).observe(() ->
+                repositories.findAllFailedDownloadCountProcessedItemsByStorageTypeAndNameIn(storageType, blobNames)
+        );
+    }
 }

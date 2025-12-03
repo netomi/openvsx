@@ -24,10 +24,7 @@ import org.springframework.web.util.UriUtils;
 import software.amazon.awssdk.auth.credentials.*;
 import software.amazon.awssdk.core.sync.ResponseTransformer;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.GetObjectRequest;
-import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
-import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
-import software.amazon.awssdk.services.s3.model.S3Object;
+import software.amazon.awssdk.services.s3.model.*;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -74,13 +71,16 @@ public class AwsDownloadCountService {
      * Task scheduled once per hour to pull logs from AWS S3 Storage and update extension download counts.
      */
     @Job(name = "Update AWS Download Counts", retries = 0)
-    @Recurring(id = "update-aws-download-counts", cron = "0 * * * * *", zoneId = "UTC")
+    @Recurring(id = "update-aws-download-counts", cron = "0 10 * * * *", zoneId = "UTC")
     public void updateDownloadCounts() {
         if (!isEnabled()) {
             return;
         }
 
         logger.info("[AwsDownloadCountService] >> updateDownloadCounts");
+
+        // Note: need to align the next jobRunTime with the cron schedule when changing it.
+        var nextJobRunTime = LocalDateTime.now().plusHours(1).withMinute(10);
         var maxExecutionTime = LocalDateTime.now().plusMinutes(50);
 
         var stopWatch = new StopWatch();
@@ -91,7 +91,7 @@ public class AwsDownloadCountService {
             var objects = listObjects(continuationToken);
 
             var files = objects.contents().stream().map(S3Object::key).toList();
-            if (!processResponse(files, stopWatch, maxExecutionTime)) {
+            if (!processResponse(files, stopWatch, maxExecutionTime, nextJobRunTime)) {
                 break;
             }
 
@@ -101,16 +101,35 @@ public class AwsDownloadCountService {
         logger.info("[AwsDownloadCountService] << updateDownloadCounts");
     }
 
-    private boolean processResponse(List<String> files, StopWatch stopWatch, LocalDateTime maxExecutionTime) {
+    private boolean processResponse(
+            List<String> files,
+            StopWatch stopWatch,
+            LocalDateTime maxExecutionTime,
+            LocalDateTime nextJobRunTime
+    ) {
         var logFiles = files.stream().filter(logFile -> logFile.endsWith(".gz")).collect(Collectors.toList());
+
+        // determine log files that have already been processed -> delete them and do not re-process them
         var processedItems = processor.processedItems(FileResource.STORAGE_AWS, logFiles);
-        processedItems.forEach(this::deleteLogFile);
+        processedItems.forEach(this::deleteFile);
+        if (!processedItems.isEmpty()) {
+            logger.info("[AwsDownloadCountService] deleting already analysed log files:");
+            processedItems.forEach(item -> logger.info("  - {}", item));
+        }
         logFiles.removeAll(processedItems);
+
+        // determine log files that could not be processed before -> keep them for analysis and skip processing
+        var failedItems = processor.failedItems(FileResource.STORAGE_AWS, logFiles);
+        if (!failedItems.isEmpty()) {
+            logger.info("[AwsDownloadCountService] skipping previously failed log files:");
+            failedItems.forEach(item -> logger.info("  - {}", item));
+        }
+        logFiles.removeAll(failedItems);
+
         for (var name : logFiles) {
             var processedOn = LocalDateTime.now();
 
             if (processedOn.isAfter(maxExecutionTime)) {
-                var nextJobRunTime = LocalDateTime.now().plusHours(1).withMinute(5);
                 logger.info("Failed to process all download counts within timeslot, next job run is at {}", nextJobRunTime);
                 return false;
             }
@@ -135,7 +154,7 @@ public class AwsDownloadCountService {
             var executionTime = (int) stopWatch.lastTaskInfo().getTimeMillis();
             processor.persistProcessedItem(name, FileResource.STORAGE_AWS, processedOn, executionTime, success);
             if (success) {
-                deleteLogFile(name);
+                deleteFile(name);
             }
         }
 
@@ -198,8 +217,8 @@ public class AwsDownloadCountService {
         return downloadsTempFile;
     }
 
-    private void deleteLogFile(String objectKey) {
-//        getS3Client().deleteObject(DeleteObjectRequest.builder().bucket(bucket).key(objectKey).build());
+    private void deleteFile(String objectKey) {
+        getS3Client().deleteObject(DeleteObjectRequest.builder().bucket(bucket).key(objectKey).build());
     }
 
     private ListObjectsV2Response listObjects(String continuationToken) {
