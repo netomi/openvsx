@@ -98,8 +98,6 @@ public class AwsDownloadCountService {
             continuationToken = objects.isTruncated() ? objects.nextContinuationToken() : null;
         } while (continuationToken != null);
 
-        processor.evictExtensionCache();
-
         logger.info("[AwsDownloadCountService] << updateDownloadCounts");
     }
 
@@ -143,7 +141,7 @@ public class AwsDownloadCountService {
                 if (!counts.isEmpty()) {
                     var extensionDownloads = processor.processDownloadCounts(FileResource.STORAGE_AWS, counts);
                     var updatedExtensions = processor.increaseDownloadCounts(extensionDownloads);
-                    processor.evictCaches(updatedExtensions, false);
+                    processor.evictCaches(updatedExtensions);
                     processor.updateSearchEntries(updatedExtensions);
                 }
 
