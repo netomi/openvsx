@@ -10,6 +10,7 @@
 package org.eclipse.openvsx.storage.log;
 
 import org.apache.commons.lang3.StringUtils;
+import org.eclipse.openvsx.entities.Extension;
 import org.eclipse.openvsx.entities.FileResource;
 import org.eclipse.openvsx.storage.AwsStorageService;
 import org.eclipse.openvsx.util.TempFile;
@@ -32,6 +33,7 @@ import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -126,39 +128,47 @@ public class AwsDownloadCountService {
         }
         logFiles.removeAll(failedItems);
 
-        for (var name : logFiles) {
-            var processedOn = LocalDateTime.now();
+        var allUpdatedExtensions = new HashSet<Extension>();
 
-            if (processedOn.isAfter(maxExecutionTime)) {
-                logger.info("Failed to process all download counts within timeslot, next job run is at {}", nextJobRunTime);
-                return false;
-            }
+        try {
+            for (var name : logFiles) {
+                var processedOn = LocalDateTime.now();
 
-            var success = false;
-            stopWatch.start();
-            try {
-                var counts = processLogFile(name);
-                if (!counts.isEmpty()) {
-                    var extensionDownloads = processor.processDownloadCounts(FileResource.STORAGE_AWS, counts);
-                    var updatedExtensions = processor.increaseDownloadCounts(extensionDownloads);
-                    processor.evictCaches(updatedExtensions);
-                    processor.updateSearchEntries(updatedExtensions);
+                if (processedOn.isAfter(maxExecutionTime)) {
+                    logger.info("Failed to process all download counts within timeslot, next job run is at {}", nextJobRunTime);
+                    return false;
                 }
 
-                success = true;
-            } catch (Exception e) {
-                logger.error("failed to process log file: {}", name, e);
+                var success = false;
+                stopWatch.start();
+                try {
+                    var counts = processLogFile(name);
+                    if (!counts.isEmpty()) {
+                        var extensionDownloads = processor.processDownloadCounts(FileResource.STORAGE_AWS, counts);
+                        var updatedExtensions = processor.increaseDownloadCounts(extensionDownloads);
+                        updatedExtensions = processor.updateEntities(updatedExtensions);
+                        allUpdatedExtensions.addAll(updatedExtensions);
+                    }
+
+                    success = true;
+                } catch (Exception e) {
+                    logger.error("failed to process log file: {}", name, e);
+                }
+
+                stopWatch.stop();
+                var executionTime = (int) stopWatch.lastTaskInfo().getTimeMillis();
+                processor.persistProcessedItem(name, FileResource.STORAGE_AWS, processedOn, executionTime, success);
+                if (success) {
+                    deleteFile(name);
+                }
             }
 
-            stopWatch.stop();
-            var executionTime = (int) stopWatch.lastTaskInfo().getTimeMillis();
-            processor.persistProcessedItem(name, FileResource.STORAGE_AWS, processedOn, executionTime, success);
-            if (success) {
-                deleteFile(name);
-            }
+            return true;
+        } finally {
+            // evict caches and update search entries for all updated extensions
+            allUpdatedExtensions.forEach(processor::evictCaches);
+            processor.updateSearchEntries(allUpdatedExtensions.stream().toList());
         }
-
-        return true;
     }
 
     private Map<String, Integer> processLogFile(String fileName) throws IOException {

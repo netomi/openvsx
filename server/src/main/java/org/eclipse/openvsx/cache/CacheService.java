@@ -97,9 +97,6 @@ public class CacheService {
         if (cache == null) {
             return; // cache is not created
         }
-        if (extension.getVersions() == null) {
-            return;
-        }
 
         var namespaceName = extension.getNamespace().getName();
         var extensionName = extension.getName();
@@ -107,6 +104,10 @@ public class CacheService {
         // Special optimization in case of a redis cache: evict all keys that match the <namespace>.<extension>* pattern
         if (cache instanceof RedisCacheWriter redisCache) {
             redisCache.clean(CACHE_EXTENSION_JSON, extensionJsonCacheKey.generateWildcard(namespaceName, extensionName).getBytes());
+            return;
+        }
+
+        if (extension.getVersions() == null) {
             return;
         }
 
@@ -151,6 +152,12 @@ public class CacheService {
     public void evictLatestExtensionVersion(Extension extension) {
         var cache = cacheManager.getCache(CACHE_LATEST_EXTENSION_VERSION);
         if(cache == null) {
+            return;
+        }
+
+        // Special optimization in case of a redis cache: evict all keys that match the <namespace>.<extension>* pattern
+        if (cache instanceof RedisCacheWriter redisCache) {
+            redisCache.clean(CACHE_LATEST_EXTENSION_VERSION, latestExtensionVersionCacheKey.generateWildcard(extension).getBytes());
             return;
         }
 
