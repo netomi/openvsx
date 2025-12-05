@@ -24,7 +24,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -89,23 +88,12 @@ public class DownloadCountProcessor {
         });
     }
 
-    @Transactional
-    public List<Extension> updateEntities(List<Extension> extensions) {
-        return Observation.createNotStarted("DownloadCountProcessor#updateEntities", observations).observe(() -> {
-            var mergedEntities = new ArrayList<Extension>();
-            extensions.forEach(extension -> {
-                extension = entityManager.merge(extension);
-                mergedEntities.add(extension);
-            });
-            return mergedEntities;
-        });
-    }
-
     @Transactional // needs transaction for lazy-loading versions
     public void evictCaches(Extension extension) {
         Observation.createNotStarted("DownloadCountProcessor#evictCaches", observations).observe(() -> {
-            cache.evictExtensionJsons(extension);
-            cache.evictLatestExtensionVersion(extension);
+            var mergedExtension = entityManager.merge(extension);
+            cache.evictExtensionJsons(mergedExtension);
+            cache.evictLatestExtensionVersion(mergedExtension);
         });
     }
 

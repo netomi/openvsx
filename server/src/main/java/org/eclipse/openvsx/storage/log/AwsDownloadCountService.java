@@ -33,7 +33,6 @@ import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -128,7 +127,7 @@ public class AwsDownloadCountService {
         }
         logFiles.removeAll(failedItems);
 
-        var allUpdatedExtensions = new HashSet<Extension>();
+        var allUpdatedExtensions = new HashMap<Long, Extension>();
 
         try {
             for (var name : logFiles) {
@@ -146,8 +145,7 @@ public class AwsDownloadCountService {
                     if (!counts.isEmpty()) {
                         var extensionDownloads = processor.processDownloadCounts(FileResource.STORAGE_AWS, counts);
                         var updatedExtensions = processor.increaseDownloadCounts(extensionDownloads);
-                        updatedExtensions = processor.updateEntities(updatedExtensions);
-                        allUpdatedExtensions.addAll(updatedExtensions);
+                        updatedExtensions.forEach(extension -> allUpdatedExtensions.put(extension.getId(), extension));
                     }
 
                     success = true;
@@ -166,8 +164,8 @@ public class AwsDownloadCountService {
             return true;
         } finally {
             // evict caches and update search entries for all updated extensions
-            allUpdatedExtensions.forEach(processor::evictCaches);
-            processor.updateSearchEntries(allUpdatedExtensions.stream().toList());
+            allUpdatedExtensions.values().forEach(processor::evictCaches);
+            processor.updateSearchEntries(allUpdatedExtensions.values().stream().toList());
         }
     }
 
