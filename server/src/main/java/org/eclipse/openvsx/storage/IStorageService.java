@@ -80,7 +80,7 @@ public interface IStorageService {
             segments = ArrayUtils.add(segments, extVersion.getTargetPlatform());
         }
 
-        segments = ArrayUtils.add(segments, UriUtils.encode(extVersion.getVersion(), StandardCharsets.UTF_8));
+        segments = ArrayUtils.add(segments, extVersion.getVersion());
         segments = ArrayUtils.addAll(segments, resource.getName().split("/"));
         var url = UrlUtil.createApiUrl("", segments);
         return url != null ? url.substring(1) : null; // remove first '/'
