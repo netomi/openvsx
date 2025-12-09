@@ -85,7 +85,7 @@ public final class UrlUtil {
             segments = ArrayUtils.add(segments, targetPlatform);
         }
         if(version != null) {
-            segments = ArrayUtils.add(segments, UriUtils.encode(version, StandardCharsets.UTF_8));
+            segments = ArrayUtils.add(segments, version);
         }
 
         return segments;
