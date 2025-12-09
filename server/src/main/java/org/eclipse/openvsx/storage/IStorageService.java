@@ -15,10 +15,13 @@ import org.eclipse.openvsx.entities.Namespace;
 import org.eclipse.openvsx.util.TempFile;
 import org.eclipse.openvsx.util.UrlUtil;
 import org.springframework.data.util.Pair;
+import org.springframework.web.util.UriUtils;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.net.URI;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.List;
 
@@ -77,7 +80,7 @@ public interface IStorageService {
             segments = ArrayUtils.add(segments, extVersion.getTargetPlatform());
         }
 
-        segments = ArrayUtils.add(segments, extVersion.getVersion());
+        segments = ArrayUtils.add(segments, UriUtils.encode(extVersion.getVersion(), StandardCharsets.UTF_8));
         segments = ArrayUtils.addAll(segments, resource.getName().split("/"));
         var url = UrlUtil.createApiUrl("", segments);
         return url != null ? url.substring(1) : null; // remove first '/'
