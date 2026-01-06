@@ -75,7 +75,7 @@ jobs:
 
       - name: Build CLI
         working-directory: cli
-        with:
+        env:
           VERSION: ${{ needs.prepare.outputs.release-version }}
         run: |
           yarn
