@@ -3402,9 +3402,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"ovsx@workspace:.":
+"ovsx-test@workspace:.":
   version: 0.0.0-use.local
-  resolution: "ovsx@workspace:."
+  resolution: "ovsx-test@workspace:."
   dependencies:
     "@eslint/eslintrc": "npm:^3.2.0"
     "@eslint/js": "npm:^9.15.0"
@@ -3430,7 +3430,7 @@ __metadata:
     typescript: "npm:^5.6.3"
     yauzl-promise: "npm:^4.0.0"
   bin:
-    ovsx: lib/ovsx
+    ovsx-test: lib/ovsx
   languageName: unknown
   linkType: soft
 
