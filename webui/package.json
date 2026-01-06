@@ -13,10 +13,10 @@
     "homepage": "https://open-vsx.org",
     "repository": {
         "type": "git",
-        "url": "https://github.com/eclipse/openvsx.git",
+        "url": "git+https://github.com/netomi/openvsx.git",
         "directory": "webui"
     },
-    "bugs": "https://github.com/eclipse/openvsx/issues",
+    "bugs": "https://github.com/netomi/openvsx/issues",
     "contributors": [
         {
             "name": "Jan Bicker",
