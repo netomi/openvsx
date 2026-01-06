@@ -79,7 +79,7 @@ jobs:
           VERSION: ${{ needs.prepare.outputs.release-version }}
         run: |
           yarn
-          yarn set version ${VERSION}          
+          yarn version ${VERSION}          
           yarn run prepare
 
       - name: Publish
