@@ -20,6 +20,7 @@ jobs:
       release-tag: ${{ steps.context.outputs.RELEASE_TAG }}
       release-version: ${{ steps.context.outputs.RELEASE_VERSION }}
       project-version: ${{ steps.context.outputs.PROJECT_VERSION }}
+      npm-tag: $${{ steps.context.outputs.NPM_TAG }}
     steps:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
@@ -37,10 +38,17 @@ jobs:
           echo "RELEASE_VERSION=$VERSION" >> $GITHUB_OUTPUT
           PROJECT_VERSION=$(jq -r .version cli/package.json)
           echo "PROJECT_VERSION=$VERSION" >> $GITHUB_OUTPUT
-          
-          if [[ "${VERSION}" != "${PROJECT_VERSION}" ]]; then
-            echo "Project version '${PROJECT_VERSION}' does not match version from tag '${VERSION}'."
-            exit 1
+
+          # if the tag contains '-rc', build and publish a release candidate
+          if [[ "${REF_NAME}" =~ ^.*-rc.* ]]; then
+            echo "NPM_TAG=next" >> $GITHUB_OUTPUT
+          else
+            echo "NPM_TAG=latest" >> $GITHUB_OUTPUT
+            
+            if [[ "${VERSION}" != "${PROJECT_VERSION}" ]]; then
+              echo "Project version '${PROJECT_VERSION}' does not match version from tag '${VERSION}'."
+              exit 1
+            fi          
           fi
 
   npm-publish:
@@ -67,18 +75,24 @@ jobs:
 
       - name: Build CLI
         working-directory: cli
+        with:
+          VERSION: ${{ needs.prepare.outputs.release-version }}
         run: |
           yarn
+          yarn set version ${VERSION}          
           yarn run prepare
 
       - name: Publish
         working-directory: cli
+        env:
+          NPM_TAG: ${{ needs.prepare.outputs.npm-tag }}
         run: |
-          npm publish --provenance --access public
+          npm publish --provenance --access public --tag ${NPM_TAG}
 
   github-publish:
     runs-on: ubuntu-22.04
     needs: ['prepare', 'npm-publish']
+    if: ${{ needs.prepare.outputs.npm-tag == 'latest' }}
     permissions:
       contents: write
     steps:
@@ -96,7 +110,7 @@ jobs:
       - name: "Create GitHub release"
         uses: softprops/action-gh-release@a06a81a03ee405af7f2048a818ed3f03bbf83c7b # v2.5.0
         with:
-          name: "Open VSX CLI v${{ needs.prepare.outputs.release-version }}"
+          name: "CLI v${{ needs.prepare.outputs.release-version }}"
           tag_name: "${{ needs.prepare.outputs.release-tag }}"
           body_path: "cli/RELEASE_NOTES.md"
           draft: false
