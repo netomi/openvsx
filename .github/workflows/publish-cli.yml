@@ -78,7 +78,7 @@ jobs:
 
   github-publish:
     runs-on: ubuntu-22.04
-    needs: ['npm-publish']
+    needs: ['prepare', 'npm-publish']
     permissions:
       contents: write
     steps:
