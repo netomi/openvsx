@@ -12,10 +12,10 @@
     "homepage": "https://open-vsx.org",
     "repository": {
         "type": "git",
-        "url": "https://github.com/eclipse/openvsx.git",
+        "url": "git+https://github.com/netomi/openvsx.git",
         "directory": "cli"
     },
-    "bugs": "https://github.com/eclipse/openvsx/issues",
+    "bugs": "https://github.com/netomi/openvsx/issues",
     "contributors": [
         {
             "name": "Miro Spönemann",
@@ -29,7 +29,9 @@
     ],
     "main": "lib/index",
     "types": "lib/index",
-    "bin": "lib/ovsx",
+    "bin": {
+        "ovsx-test": "lib/ovsx"
+    },
     "engines": {
         "node": ">= 20"
     },
