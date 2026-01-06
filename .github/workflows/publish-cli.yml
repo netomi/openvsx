@@ -79,7 +79,7 @@ jobs:
           VERSION: ${{ needs.prepare.outputs.release-version }}
         run: |
           yarn
-          yarn version ${VERSION}          
+          npm version ${VERSION} --allow-same-version
           yarn run prepare
 
       - name: Publish
