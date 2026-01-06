@@ -20,7 +20,7 @@ jobs:
       release-tag: ${{ steps.context.outputs.RELEASE_TAG }}
       release-version: ${{ steps.context.outputs.RELEASE_VERSION }}
       project-version: ${{ steps.context.outputs.PROJECT_VERSION }}
-      npm-tag: $${{ steps.context.outputs.NPM_TAG }}
+      npm-tag: ${{ steps.context.outputs.NPM_TAG }}
     steps:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
