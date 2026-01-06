@@ -74,7 +74,7 @@ jobs:
       - name: Publish
         working-directory: cli
         run: |
-          yarn npm publish --provenance --access public
+          npm publish --provenance --access public
 
   github-publish:
     runs-on: ubuntu-22.04
