@@ -129,7 +129,7 @@ jobs:
       with:
         images: |
           ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.SERVER_IMAGE }}
-        tags:
+        tags: |
           type=ref,event=pr
           type=sha,prefix={{branch}}-
         labels: |
