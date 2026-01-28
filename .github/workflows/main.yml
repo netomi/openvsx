@@ -5,6 +5,7 @@ on:
     branches:
       - master
   pull_request:
+    types: [opened, synchronize, reopened]
     branches:
       - master
 
@@ -73,7 +74,7 @@ jobs:
         tags:
           type=sha,prefix=
         labels: |
-          org.opencontainers.image.title=OpenVSX WebUI
+          org.opencontainers.image.title=OpenVSX WebUI Snapshot
 
     - name: Build and push Web UI Image
       if: steps.changed_webui_files.outputs.any_changed == 'true'
@@ -130,20 +131,21 @@ jobs:
         images: |
           ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.SERVER_IMAGE }}
         tags: |
-          type=ref,event=pr
-          type=sha,prefix={{branch}}-
+          type=raw,value={{branch}},enabled={{is_not_default_branch}}
+          type=raw,value={{sha}},enable={{is_default_branch}}
         labels: |
-          org.opencontainers.image.title=OpenVSX Server
+          org.opencontainers.image.title=OpenVSX Server Snapshot
 
     - name: Build and push Server Image
-      if: steps.changed_server_files.outputs.any_changed == 'true'
+      # if: steps.changed_server_files.outputs.any_changed == 'true'
       uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
       env:
         DEVELOCITY_ACCESS_KEY: ${{ secrets.DEVELOCITY_API_TOKEN }}
       with:
         context: server
+#        if: github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]'
         # only push to ghcr.io in the upstream repo when pushing to the master branch
-        push: ${{ github.repository_owner == 'eclipse' && github.event_name == 'push' && github.ref == 'refs/heads/master' }}
+        push: true # ${{ github.repository_owner == 'netomi' && github.event_name == 'push' && github.ref == 'refs/heads/master' }}
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
         secret-envs: |
