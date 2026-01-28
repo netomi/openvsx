@@ -124,7 +124,7 @@ jobs:
         password: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Extract metadata (tags, labels) for Docker
-      if: steps.changed_server_files.outputs.any_changed == 'true'
+      #if: steps.changed_server_files.outputs.any_changed == 'true'
       id: meta
       uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5.10.0
       with:
