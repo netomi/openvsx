@@ -10,8 +10,8 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  SERVER_IMAGE: openvsx-server
-  WEBUI_IMAGE: openvsx-webui
+  SERVER_IMAGE: openvsx-server-snapshot
+  WEBUI_IMAGE: openvsx-webui-snapshot
 
 jobs:
   build-cli:
@@ -130,7 +130,8 @@ jobs:
         images: |
           ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.SERVER_IMAGE }}
         tags:
-          type=sha,prefix=
+          type=ref,event=pr
+          type=sha,prefix={{branch}}-
         labels: |
           org.opencontainers.image.title=OpenVSX Server
 
